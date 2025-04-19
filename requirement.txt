@@ -1,0 +1,11 @@
+streamlit
+yfinance
+pandas
+numpy
+scikit-learn
+plotly
+matplotlib
+python-dotenv
+keras
+prophet
+
