@@ -29,6 +29,7 @@ if streamlit_installed:
     st.title("\U0001F680 AI-Driven Finance Predictor")
     st.markdown("Use deep learning and technical analysis to forecast stock movements.")
 
+
 def fetch_stock_data(ticker, start=None, end=None):
     try:
         df = yf.download(ticker, start=start, end=end)
@@ -43,6 +44,7 @@ def fetch_stock_data(ticker, start=None, end=None):
             st.error(f"Error fetching stock data: {e}")
         return None
 
+
 def add_technical_indicators(df):
     try:
         df = df.astype({"Open": float, "High": float, "Low": float, "Close": float, "Volume": float})
@@ -56,6 +58,7 @@ def add_technical_indicators(df):
             st.error(f"Error adding technical indicators: {e}")
         return df
 
+
 def compute_rsi(series, window):
     delta = series.diff()
     gain = (delta.where(delta > 0, 0)).rolling(window=window).mean()
@@ -63,6 +66,7 @@ def compute_rsi(series, window):
     rs = gain / loss
     rsi = 100 - (100 / (1 + rs))
     return rsi
+
 
 def prepare_data(df, lookback=60):
     try:
@@ -81,6 +85,7 @@ def prepare_data(df, lookback=60):
         if streamlit_installed:
             st.error(f"Error preparing data: {e}")
         return None, None, None
+
 
 def train_model(X, y, epochs=5, batch_size=32):
     try:
@@ -154,11 +159,17 @@ if streamlit_installed:
 
                     elif model_choice == "Prophet" and prophet_installed:
                         st.subheader("📈 Prophet Forecast (7 Days)")
-                        df_p = df[['Close']].reset_index(names="ds").rename(columns={"Close": "y"})
+                        df_p = df.reset_index()[['Date', 'Close']].rename(columns={'Date': 'ds', 'Close': 'y'})
+                        df_p['ds'] = pd.to_datetime(df_p['ds'])
+                        df_p['y'] = pd.to_numeric(df_p['y'], errors='coerce')
+                        df_p.dropna(subset=['ds', 'y'], inplace=True)
+
                         m = Prophet()
                         m.fit(df_p)
-                        future = m.make_future_dataframe(periods=7)
+
+                        future = m.make_future_dataframe(periods=int(7))
                         forecast = m.predict(future)
+
                         fig = go.Figure()
                         fig.add_trace(go.Scatter(x=forecast['ds'], y=forecast['yhat'], name='Forecast'))
                         fig.add_trace(go.Scatter(x=df_p['ds'], y=df_p['y'], name='Actual'))
@@ -168,3 +179,6 @@ if streamlit_installed:
                 st.dataframe(df.tail(10))
             else:
                 st.warning(f"⚠️ No data for {symbol}. Try a different symbol or a longer date range.")
+
+if __name__ == "__main__":
+    os.system("streamlit run m.py")
